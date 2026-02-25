@@ -1,23 +1,12 @@
 {
   "name": "Ecodesbroce – Calculadora",
   "short_name": "Ecodesbroce",
-  "start_url": ".",
+  "version": "1.0.3",
+  "start_url": "./?v=3",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f6f7f8",
   "theme_color": "#00bb66",
-  "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
-}
-{
-  "name": "Ecodesbroce – Calculadora",
-  "short_name": "Ecodesbroce",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#f6f7f8",
-  "theme_color": "#00bb66",
-  "version": "1.0.1",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
