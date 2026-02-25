@@ -1,2 +1,2 @@
 # ecodesbroce-app
-Calculadora de presupuesto para ecodesbroce
+Calculadora de presupuesto Ecodesbroce
