@@ -3,11 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
   <title>Ecodesbroce – Calculadora</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00bb66">
+
   <style>
     :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
     body { margin: 0; background:#f6f7f8; }
-    header { padding: 14px 16px; background:#0b6; color:#fff; font-weight:700; }
+    header { padding: 14px 16px; background:#00bb66; color:#fff; font-weight:700; }
     main { padding: 14px 16px; max-width: 760px; margin: 0 auto; }
     .card { background:#fff; border-radius:14px; padding: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.06); margin-bottom: 12px; }
     .row { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -15,7 +21,7 @@
     select, input { width:100%; padding: 10px 12px; border:1px solid #ddd; border-radius: 12px; font-size: 16px; background:#fff; }
     .btnrow { display:flex; gap:10px; flex-wrap:wrap; }
     button { border:0; border-radius: 12px; padding: 10px 12px; font-size: 16px; font-weight:600; cursor:pointer; }
-    .primary { background:#0b6; color:#fff; }
+    .primary { background:#00bb66; color:#fff; }
     .ghost { background:#eef1f2; color:#111; }
     .mono { font-variant-numeric: tabular-nums; }
     .big { font-size: 22px; font-weight: 800; }
@@ -24,266 +30,132 @@
     @media (max-width: 560px){ .row{ grid-template-columns: 1fr; } }
   </style>
 </head>
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js");
-  }
-</script>
+
 <body>
+
 <header>Ecodesbroce – Calculadora de presupuesto</header>
 
 <main>
+
   <div class="card">
     <div class="row">
       <div>
         <label>Superficie (m²)</label>
         <input id="m2" type="number" min="0" step="1" value="1000" />
       </div>
+
       <div>
-        <label>IVA (%) (opcional)</label>
+        <label>IVA (%)</label>
         <input id="iva" type="number" min="0" step="1" value="21" />
       </div>
 
       <div>
         <label>Tipo de parcela</label>
         <select id="parcela">
-          <option value="Rústica">Rústica</option>
-          <option value="Industrial">Industrial</option>
-          <option value="Urbana">Urbana</option>
+          <option>Rústica</option>
+          <option>Industrial</option>
+          <option>Urbana</option>
         </select>
       </div>
 
       <div>
         <label>Estado de vegetación</label>
         <select id="veg">
-          <option value="Hierba baja">Hierba baja</option>
-          <option value="Hierba media">Hierba media</option>
-          <option value="Hierba alta">Hierba alta</option>
-          <option value="Maleza densa">Maleza densa</option>
+          <option>Hierba baja</option>
+          <option>Hierba media</option>
+          <option>Hierba alta</option>
+          <option>Maleza densa</option>
         </select>
       </div>
 
       <div>
         <label>Accesibilidad</label>
         <select id="acc">
-          <option value="Buena">Buena</option>
-          <option value="Regular">Regular</option>
-          <option value="Difícil">Difícil</option>
+          <option>Buena</option>
+          <option>Regular</option>
+          <option>Difícil</option>
         </select>
       </div>
 
       <div>
         <label>Retirada de restos</label>
         <select id="restos">
-          <option value="No">No</option>
-          <option value="Sí">Sí</option>
+          <option>No</option>
+          <option>Sí</option>
         </select>
       </div>
 
       <div class="full">
         <label>Mínimo (€)</label>
-        <input id="minimo" type="number" min="0" step="1" value="150" />
+        <input id="minimo" type="number" value="150" />
       </div>
     </div>
 
     <div style="height:10px"></div>
     <div class="btnrow">
-      <button class="primary" id="calc">Calcular</button>
-      <button class="ghost" id="save">Guardar precios</button>
-      <button class="ghost" id="reset">Reset precios</button>
-    </div>
-    <div class="muted" style="margin-top:10px">
-      Los precios se guardan en el teléfono (offline). Ajusta cuando cambies tarifas.
+      <button class="primary" onclick="calcular()">Calcular</button>
+      <button class="ghost" onclick="guardar()">Guardar precios</button>
+      <button class="ghost" onclick="resetear()">Reset precios</button>
     </div>
   </div>
 
   <div class="card">
-    <div class="row">
-      <div class="full">
-        <div class="muted">Total sin IVA</div>
-        <div class="big mono" id="neto">—</div>
-      </div>
-      <div>
-        <div class="muted">IVA</div>
-        <div class="mono" id="ivaOut">—</div>
-      </div>
-      <div>
-        <div class="muted">Total con IVA</div>
-        <div class="mono" id="total">—</div>
-      </div>
-      <div class="full">
-        <div class="muted">Detalle</div>
-        <div class="mono" id="detalle">—</div>
-      </div>
-    </div>
+    <div class="muted">Total sin IVA</div>
+    <div class="big mono" id="neto">—</div>
+
+    <div class="muted">IVA</div>
+    <div class="mono" id="ivaOut">—</div>
+
+    <div class="muted">Total con IVA</div>
+    <div class="mono" id="total">—</div>
+
+    <div class="muted">Detalle</div>
+    <div class="mono" id="detalle">—</div>
   </div>
 
-  <div class="card">
-    <div class="muted" style="margin-bottom:8px">Tabla de precios (€/m²)</div>
-    <div class="row">
-      <div>
-        <label>Base</label>
-        <input id="p_base" type="number" step="0.001" />
-      </div>
-      <div>
-        <label>Parcela industrial (suplemento)</label>
-        <input id="p_ind" type="number" step="0.001" />
-      </div>
-      <div>
-        <label>Parcela urbana (suplemento)</label>
-        <input id="p_urb" type="number" step="0.001" />
-      </div>
-      <div>
-        <label>Hierba media (suplemento)</label>
-        <input id="p_hm" type="number" step="0.001" />
-      </div>
-      <div>
-        <label>Hierba alta (suplemento)</label>
-        <input id="p_ha" type="number" step="0.001" />
-      </div>
-      <div>
-        <label>Maleza densa (suplemento)</label>
-        <input id="p_md" type="number" step="0.001" />
-      </div>
-      <div>
-        <label>Accesibilidad regular (suplemento)</label>
-        <input id="p_ar" type="number" step="0.001" />
-      </div>
-      <div>
-        <label>Accesibilidad difícil (suplemento)</label>
-        <input id="p_ad" type="number" step="0.001" />
-      </div>
-      <div class="full">
-        <label>Retirada de restos (suplemento)</label>
-        <input id="p_rr" type="number" step="0.001" />
-      </div>
-    </div>
-  </div>
 </main>
 
 <script>
-  // Valores por defecto coherentes con tu modelo (fórmula base 0,15 y recargos derivados)
-  const DEFAULTS = {
-    base: 0.15,
-    ind: 0.045,
-    urb: 0.075,
-    hm:  0.03,
-    ha:  0.075,
-    md:  0.15,
-    ar:  0.03,
-    ad:  0.075,
-    rr:  0.05
-  };
+const DEF = { base:0.15, ind:0.045, urb:0.075, hm:0.03, ha:0.075, md:0.15, ar:0.03, ad:0.075, rr:0.05 };
+const $ = id => document.getElementById(id);
 
-  const $ = (id) => document.getElementById(id);
+function precios(){ return JSON.parse(localStorage.getItem("eco_prices")||JSON.stringify(DEF)); }
+function guardar(){ localStorage.setItem("eco_prices",JSON.stringify(DEF)); alert("Precios guardados"); }
+function resetear(){ localStorage.removeItem("eco_prices"); alert("Precios restaurados"); }
 
-  function loadPrices(){
-    const raw = localStorage.getItem("eco_prices");
-    const p = raw ? JSON.parse(raw) : DEFAULTS;
-    $("p_base").value = p.base;
-    $("p_ind").value  = p.ind;
-    $("p_urb").value  = p.urb;
-    $("p_hm").value   = p.hm;
-    $("p_ha").value   = p.ha;
-    $("p_md").value   = p.md;
-    $("p_ar").value   = p.ar;
-    $("p_ad").value   = p.ad;
-    $("p_rr").value   = p.rr;
-    return p;
-  }
+function eur(v){ return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(v); }
 
-  function getPrices(){
-    return {
-      base: parseFloat($("p_base").value || 0),
-      ind:  parseFloat($("p_ind").value || 0),
-      urb:  parseFloat($("p_urb").value || 0),
-      hm:   parseFloat($("p_hm").value || 0),
-      ha:   parseFloat($("p_ha").value || 0),
-      md:   parseFloat($("p_md").value || 0),
-      ar:   parseFloat($("p_ar").value || 0),
-      ad:   parseFloat($("p_ad").value || 0),
-      rr:   parseFloat($("p_rr").value || 0),
-    };
-  }
+function calcular(){
+  const m2=+$("m2").value, iva=+$("iva").value, min=+$("minimo").value;
+  const p=precios(); let n=0, d=[];
+  n+=m2*p.base; d.push(["Base",m2*p.base]);
+  if($("parcela").value==="Industrial"){n+=m2*p.ind; d.push(["Parcela industrial",m2*p.ind]);}
+  if($("parcela").value==="Urbana"){n+=m2*p.urb; d.push(["Parcela urbana",m2*p.urb]);}
+  if($("veg").value==="Hierba media"){n+=m2*p.hm; d.push(["Hierba media",m2*p.hm]);}
+  if($("veg").value==="Hierba alta"){n+=m2*p.ha; d.push(["Hierba alta",m2*p.ha]);}
+  if($("veg").value==="Maleza densa"){n+=m2*p.md; d.push(["Maleza densa",m2*p.md]);}
+  if($("acc").value==="Regular"){n+=m2*p.ar; d.push(["Accesibilidad regular",m2*p.ar]);}
+  if($("acc").value==="Difícil"){n+=m2*p.ad; d.push(["Accesibilidad difícil",m2*p.ad]);}
+  if($("restos").value==="Sí"){n+=m2*p.rr; d.push(["Retirada restos",m2*p.rr]);}
+  if(n<min){ d.push(["Mínimo aplicado",min-n]); n=min; }
 
-  function savePrices(){
-    localStorage.setItem("eco_prices", JSON.stringify(getPrices()));
-    alert("Precios guardados.");
-  }
+  $("neto").textContent=eur(n);
+  $("ivaOut").textContent=eur(n*iva/100);
+  $("total").textContent=eur(n*(1+iva/100));
+  $("detalle").innerHTML=d.map(x=>`${x[0]} → ${eur(x[1])}`).join("<br>");
+}
 
-  function resetPrices(){
-    localStorage.removeItem("eco_prices");
-    loadPrices();
-    alert("Precios restaurados.");
-  }
-
-  function eur(x){
-    return new Intl.NumberFormat('es-ES', { style:'currency', currency:'EUR' }).format(x);
-  }
-
-  function calc(){
-    const m2 = parseFloat($("m2").value || 0);
-    const ivaPct = parseFloat($("iva").value || 0);
-    const minimo = parseFloat($("minimo").value || 0);
-
-    const parcela = $("parcela").value;
-    const veg = $("veg").value;
-    const acc = $("acc").value;
-    const restos = $("restos").value;
-
-    const p = getPrices();
-
-    let lineas = [];
-    let neto = 0;
-
-    // Base siempre
-    const base = m2 * p.base;
-    neto += base;
-    lineas.push(["Desbroce base", p.base, base]);
-
-    // Parcela
-    if (parcela === "Industrial") { const v = m2*p.ind; neto+=v; lineas.push(["Parcela industrial", p.ind, v]); }
-    if (parcela === "Urbana")     { const v = m2*p.urb; neto+=v; lineas.push(["Parcela urbana", p.urb, v]); }
-
-    // Vegetación
-    if (veg === "Hierba media") { const v = m2*p.hm; neto+=v; lineas.push(["Hierba media", p.hm, v]); }
-    if (veg === "Hierba alta")  { const v = m2*p.ha; neto+=v; lineas.push(["Hierba alta", p.ha, v]); }
-    if (veg === "Maleza densa") { const v = m2*p.md; neto+=v; lineas.push(["Maleza densa", p.md, v]); }
-
-    // Accesibilidad
-    if (acc === "Regular") { const v = m2*p.ar; neto+=v; lineas.push(["Accesibilidad regular", p.ar, v]); }
-    if (acc === "Difícil") { const v = m2*p.ad; neto+=v; lineas.push(["Accesibilidad difícil", p.ad, v]); }
-
-    // Retirada
-    if (restos === "Sí") { const v = m2*p.rr; neto+=v; lineas.push(["Retirada de restos", p.rr, v]); }
-
-    // Mínimo
-    if (neto < minimo) {
-      lineas.push(["Mínimo aplicado", null, (minimo - neto)]);
-      neto = minimo;
-    }
-
-    const iva = neto * (ivaPct/100);
-    const total = neto + iva;
-
-    $("neto").textContent = eur(neto);
-    $("ivaOut").textContent = eur(iva);
-    $("total").textContent = eur(total);
-
-    $("detalle").innerHTML = lineas.map(([n, pu, sub]) => {
-      const puTxt = (pu === null) ? "" : (pu.toFixed(3).replace(".", ",") + " €/m²");
-      return `${n}: ${puTxt} → ${eur(sub)}`;
-    }).join("<br/>");
-  }
-
-  $("calc").addEventListener("click", calc);
-  $("save").addEventListener("click", savePrices);
-  $("reset").addEventListener("click", resetPrices);
-
-  loadPrices();
-  calc();
+calcular();
 </script>
+
+<!-- Service Worker -->
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js");
+  });
+}
+</script>
+
 </body>
 </html>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#00bb66">

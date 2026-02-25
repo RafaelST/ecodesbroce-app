@@ -1,8 +1,17 @@
-const CACHE = "eco-v1";
-const ASSETS = ["./", "./index.html", "./manifest.json", "./sw.js"];
+const CACHE = "eco-v2"; // Sube a eco-v3, eco-v4... cada vez que actualices
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./sw.js",
+  "./icon-192.png",
+  "./icon-512.png"
+];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(ASSETS))
+  );
   self.skipWaiting();
 });
 
@@ -15,6 +24,25 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
+// Estrategia: cache-first (offline fiable)
 self.addEventListener("fetch", (e) => {
-  e.respondWith(caches.match(e.request).then((c) => c || fetch(e.request)));
+  // Solo GET
+  if (e.request.method !== "GET") return;
+
+  e.respondWith(
+    caches.match(e.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(e.request)
+        .then((resp) => {
+          // Guarda en cache lo nuevo (si es del mismo origen)
+          const url = new URL(e.request.url);
+          if (url.origin === self.location.origin) {
+            const copy = resp.clone();
+            caches.open(CACHE).then((cache) => cache.put(e.request, copy));
+          }
+          return resp;
+        })
+        .catch(() => caches.match("./")); // fallback
+    })
+  );
 });
