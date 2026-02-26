@@ -119,30 +119,47 @@
 const DEF = { base:0.15, ind:0.045, urb:0.075, hm:0.03, ha:0.075, md:0.15, ar:0.03, ad:0.075, rr:0.05 };
 const $ = id => document.getElementById(id);
 
-function precios(){ return JSON.parse(localStorage.getItem("eco_prices")||JSON.stringify(DEF)); }
-function guardar(){ localStorage.setItem("eco_prices",JSON.stringify(DEF)); alert("Precios guardados"); }
+function precios(){ return JSON.parse(localStorage.getItem("eco_prices") || JSON.stringify(DEF)); }
+function guardar(){ localStorage.setItem("eco_prices", JSON.stringify(DEF)); alert("Precios guardados"); }
 function resetear(){ localStorage.removeItem("eco_prices"); alert("Precios restaurados"); }
 
 function eur(v){ return new Intl.NumberFormat("es-ES",{style:"currency",currency:"EUR"}).format(v); }
 
 function calcular(){
-  const m2=+$("m2").value, iva=+$("iva").value, min=+$("minimo").value;
-  const p=precios(); let n=0, d=[];
-  n+=m2*p.base; d.push(["Base",m2*p.base]);
-  if($("parcela").value==="Industrial"){n+=m2*p.ind; d.push(["Parcela industrial",m2*p.ind]);}
-  if($("parcela").value==="Urbana"){n+=m2*p.urb; d.push(["Parcela urbana",m2*p.urb]);}
-  if($("veg").value==="Hierba media"){n+=m2*p.hm; d.push(["Hierba media",m2*p.hm]);}
-  if($("veg").value==="Hierba alta"){n+=m2*p.ha; d.push(["Hierba alta",m2*p.ha]);}
-  if($("veg").value==="Maleza densa"){n+=m2*p.md; d.push(["Maleza densa",m2*p.md]);}
-  if($("acc").value==="Regular"){n+=m2*p.ar; d.push(["Accesibilidad regular",m2*p.ar]);}
-  if($("acc").value==="Difícil"){n+=m2*p.ad; d.push(["Accesibilidad difícil",m2*p.ad]);}
-  if($("restos").value==="Sí"){n+=m2*p.rr; d.push(["Retirada restos",m2*p.rr]);}
-  if(n<min){ d.push(["Mínimo aplicado",min-n]); n=min; }
+  const m2 = +$("m2").value || 0;
+  const iva = +$("iva").value || 0;
+  const min = +$("minimo").value || 150;
+  const p = precios();
 
-  $("neto").textContent=eur(n);
-  $("ivaOut").textContent=eur(n*iva/100);
-  $("total").textContent=eur(n*(1+iva/100));
-  $("detalle").innerHTML=d.map(x=>`${x[0]} → ${eur(x[1])}`).join("<br>");
+  // Precio por m² (modelo Easy Firma: base + suplementos)
+  let pm2 = p.base;
+  const det = [];
+  det.push(`m²: ${m2}`);
+  det.push(`Base: ${(p.base).toFixed(3)} €/m²`);
+
+  if($("parcela").value==="Industrial"){ pm2 += p.ind; det.push(`Parcela industrial: +${p.ind.toFixed(3)} €/m²`); }
+  if($("parcela").value==="Urbana"){     pm2 += p.urb; det.push(`Parcela urbana: +${p.urb.toFixed(3)} €/m²`); }
+
+  if($("veg").value==="Hierba media"){   pm2 += p.hm;  det.push(`Hierba media: +${p.hm.toFixed(3)} €/m²`); }
+  if($("veg").value==="Hierba alta"){    pm2 += p.ha;  det.push(`Hierba alta: +${p.ha.toFixed(3)} €/m²`); }
+  if($("veg").value==="Maleza densa"){   pm2 += p.md;  det.push(`Maleza densa: +${p.md.toFixed(3)} €/m²`); }
+
+  if($("acc").value==="Regular"){        pm2 += p.ar;  det.push(`Accesibilidad regular: +${p.ar.toFixed(3)} €/m²`); }
+  if($("acc").value==="Difícil"){        pm2 += p.ad;  det.push(`Accesibilidad difícil: +${p.ad.toFixed(3)} €/m²`); }
+
+  if($("restos").value==="Sí"){          pm2 += p.rr;  det.push(`Retirada restos: +${p.rr.toFixed(3)} €/m²`); }
+
+  const calculado = m2 * pm2;
+  const neto = Math.max(min, calculado);
+
+  det.push(`€/m² total: ${pm2.toFixed(3)} €/m²`);
+  det.push(`Calculado: ${eur(calculado)} (sin IVA)`);
+  if (neto === min && calculado < min) det.push(`Mínimo aplicado: ${eur(min)} (sin IVA)`);
+
+  $("neto").textContent = eur(neto);
+  $("ivaOut").textContent = eur(neto * iva/100);
+  $("total").textContent = eur(neto * (1 + iva/100));
+  $("detalle").innerHTML = det.join("<br>");
 }
 
 calcular();
