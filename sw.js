@@ -1,4 +1,4 @@
-const CACHE = "eco-v2"; // Sube a eco-v3, eco-v4... cada vez que actualices
+const CACHE = "eco-v3"; // Sube a eco-v4, eco-v5... cada vez que actualices
 const ASSETS = [
   "./",
   "./index.html",
@@ -45,4 +45,5 @@ self.addEventListener("fetch", (e) => {
         .catch(() => caches.match("./")); // fallback
     })
   );
+
 });
